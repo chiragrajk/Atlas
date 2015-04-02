@@ -139,7 +139,7 @@ void loop() {
   }
   
     if (failedCounter > 3 ) {
-      //startEthernet();
+      // restart connection
       connectWifi();
       failedCounter = 0;
     }
@@ -238,9 +238,6 @@ float read_DO(){
   float avg = 0;
   float sat_avg = 0;
  
-  String DO;
-  String temperature;
-  
   analogReference(INTERNAL);
   Serial.println("in readDO(): Switching voltage to INTERNAL 1.1v");
 
@@ -257,8 +254,6 @@ float read_DO(){
   avg = sum / DO_READ_NUM;
   sat_avg = avg / 28.5*100;
   
-  DO = String((int)(sat_avg), DEC);
-  
   analogReference(DEFAULT);  // DEFAULT = 3.3v
   Serial.println("in readDO(): Switching voltage to DEFAULT 3.3v ");
   return sat_avg;
@@ -267,33 +262,23 @@ float read_DO(){
 
 void update(float coreTemp, float phScale, float doScale, float waterTemp)
 {
-//  String updateString;// = "field1=" + coreTemp;
-//  String lcdString = "";
-//  char buf[24];
-//
-//  lcdString = "cT:" + coreTemp;
-//  lcdString += "pH:" + phScale;
-//  lcdString.toCharArray(buf, 24);
-//  show(buf);
-//  
-//  lcdString = "DO:" + doScale;
-//  lcdString += "wT:" + waterTemp;
-//  lcdString.toCharArray(buf, 24);
-//  show(buf);
-//  delay(2000);
-//  updateString = "1=" + coreTemp;
-//  updateString += "&2=" + phScale;
-//  updateString += "&3=" + doScale;
-//  updateString += "&4=" + waterTemp;
-//  Serial.print(">>>> updateString(3,4): ");
-//  Serial.println(updateString);
-//
-//  show("updateThingSpeak");
-//  updateThingSpeak(updateString);
+  char updateBuf[32];
+  char buf[5];
+  char lcdChar[20];
+  sprintf(lcdChar, "cT:%s pH:%s", toChar(coreTemp, buf), toChar(phScale, buf));
+  show(lcdChar);
+  sprintf(lcdChar, "DO:%s wT:%s", toChar(doScale, buf), toChar(waterTemp, buf));
+  show(lcdChar);
+  
+  sprintf(updateBuf, "1=%s&2=%s&3=%s&4=%s", toChar(coreTemp, buf), toChar(phScale, buf), toChar(doScale, buf), toChar(waterTemp, buf) );
+  Serial.println(updateBuf);
+  delay(2000);
+  updateThingSpeak(updateBuf);
 }
 
 void updateThingSpeak(String tsData)
 {
+
   if (client.connect(thingSpeakAddress, 3000))
   {         
     client.println("POST /update HTTP/1.1");
@@ -310,11 +295,13 @@ void updateThingSpeak(String tsData)
     
     lastConnectionTime = millis();
     
+    client.flush();
+    
     if (client.connected())
     {
       Serial.println("Connecting to ThingSpeak...");
       Serial.println();
-      
+      show("TS: updating");
       failedCounter = 0;
     }
     else
@@ -323,26 +310,25 @@ void updateThingSpeak(String tsData)
   
       Serial.println("Connection to ThingSpeak failed ("+String(failedCounter, DEC)+")");   
       Serial.println();
-      show("ThingSpeak");
-      show("Failed 2");
+      show("TS: Failed 2");
     }
     
   }
   else
   {
     failedCounter++;
-    
+    char buf[3];
     Serial.println("Connection to ThingSpeak Failed ("+String(failedCounter, DEC)+")");   
     Serial.println();
-    show("ThingSpeak");
-    show("Failed 1");
+    show("TS: Failed 1");
     lastConnectionTime = millis(); 
   }
+  show("update complete");
 }
 
 // scroll display.
-char line1[40];
-char line2[40];
+char line1[20];
+char line2[20];
 // only 16 characters at a time.
 void show(char* text) {    
     lcd.clear();
@@ -352,6 +338,30 @@ void show(char* text) {
     lcd.setCursor(0, 1);    // set cursor to new line.
     lcd.print(line2);
     
+}
+
+
+char *toChar(float f, char *tmp)
+{
+  int i = trunc(f*100);
+  int j = 0;
+  if (f>=100.00)
+  {
+    j = i / 1000;
+  }
+  else
+  {
+    j = i / 100;
+  }
+  i = i%100;
+  sprintf(tmp, "%d.%d", j, i);
+  return tmp;
+}
+
+char *toChar(int i, char *tmp)
+{
+  sprintf(tmp, "%d", i);
+  return tmp;
 }
 
 //bool isNight()

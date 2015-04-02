@@ -130,10 +130,10 @@ void loop() {
     // Update ThingSpeak
   if(!client.connected() && (millis() - lastConnectionTime > updateThingSpeakInterval))
   {
-    String coreTemp = String(read_CoreTemp());
-    String phScale = String(read_Ph());
-    String doScale = String(read_DO());
-    String waterTemp= String(read_WaterTemp());
+    float coreTemp = read_CoreTemp();
+    float phScale = read_Ph();
+    float doScale = read_DO();
+    float waterTemp= read_WaterTemp();
 
     update(coreTemp, phScale, doScale, waterTemp);
   }
@@ -174,7 +174,7 @@ float read_WaterTemp(void)
   digitalWrite(TEMP_PROBE_READ_PIN, LOW);   //set pull-up on analog pin
   delay(2);                //wait 2 ms for temp to stabilize
   v_out = analogRead(TEMP_PROBE_READ_PIN);   //read the input pin
-  v_out*= 0.0048;            //convert ADC points to volts (we are using .0048 because this device is running at 5 volts)
+  v_out*= 0.0033;            //convert ADC points to volts (we are using .0048 because this device is running at 5 volts)
   v_out*=1000;             //convert volts to millivolts
   temp= 0.0512 * v_out -20.5128; //the equation from millivolts to temperature
 
@@ -265,31 +265,31 @@ float read_DO(){
   
 }
 
-void update(String coreTemp, String phScale, String doScale, String waterTemp)
+void update(float coreTemp, float phScale, float doScale, float waterTemp)
 {
-  String updateString;// = "field1=" + coreTemp;
-  String lcdString = "";
-  char buf[24];
-
-  lcdString = "cT:" + coreTemp;
-  lcdString += "pH:" + phScale;
-  lcdString.toCharArray(buf, 24);
-  show(buf);
-  
-  lcdString = "DO:" + doScale;
-  lcdString += "wT:" + waterTemp;
-  lcdString.toCharArray(buf, 24);
-  show(buf);
-  delay(2000);
-  updateString = "1=" + coreTemp;
-  updateString += "&2=" + phScale;
-  updateString += "&3=" + doScale;
-  updateString += "&4=" + waterTemp;
-  Serial.print(">>>> updateString(3,4): ");
-  Serial.println(updateString);
-
-  show("updateThingSpeak");
-  updateThingSpeak(updateString);
+//  String updateString;// = "field1=" + coreTemp;
+//  String lcdString = "";
+//  char buf[24];
+//
+//  lcdString = "cT:" + coreTemp;
+//  lcdString += "pH:" + phScale;
+//  lcdString.toCharArray(buf, 24);
+//  show(buf);
+//  
+//  lcdString = "DO:" + doScale;
+//  lcdString += "wT:" + waterTemp;
+//  lcdString.toCharArray(buf, 24);
+//  show(buf);
+//  delay(2000);
+//  updateString = "1=" + coreTemp;
+//  updateString += "&2=" + phScale;
+//  updateString += "&3=" + doScale;
+//  updateString += "&4=" + waterTemp;
+//  Serial.print(">>>> updateString(3,4): ");
+//  Serial.println(updateString);
+//
+//  show("updateThingSpeak");
+//  updateThingSpeak(updateString);
 }
 
 void updateThingSpeak(String tsData)

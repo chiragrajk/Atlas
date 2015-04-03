@@ -49,11 +49,12 @@ const int updateThingSpeakInterval = 16 * 1000;      // Time interval in millise
 
 DS3231 RTC; //Create the DS3231 object
 
-#define sensorReadingInterval 2000  //define delay between readings in milliseconds 
+#define sensorReadingInterval         600000    //define delay between readings in milliseconds 
 #define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break 
 #define numReconnect          5       //define number of trying to reconnect WiFi if lost
 int reconnectCount = 0;
 int numWait = 0;
+int goAgain = 10;
 
 void setup() {
   
@@ -61,7 +62,7 @@ void setup() {
   Serial.println("Welcome to WSN 2015");
   
   myserial.begin(9600);       // begin software serial to PH probe
-  PhDisableContinious();      // disable continious mode in PH probe
+//  PhDisableContinious();      // disable continious mode in PH probe
   
   lcd.begin(16, 2);           // setup lcd display
   lcd.setRGB(255, 0, 0);
@@ -146,6 +147,11 @@ void loop(){
     numWait += 1; 
     delay(1500); 
   } 
+  if(numWait >= numSecWait)
+    goAgain = 1;
+  else
+    goAgain = 0;
+    
   numWait = 0; 
   
   while (client.available()) 
@@ -156,12 +162,20 @@ void loop(){
 
     Serial.println("...disconnected"); 
     Serial.println(); 
-    delay(sensorReadingInterval); 
+    
+    if(goAgain <= 0){
+      Serial.println("going to sleep...*");
+      show("sleeping...*");
+      delay(sensorReadingInterval); 
+    }
+    else
+      goAgain--;
 
     client.flush(); 
     Serial.println("flushed..."); 
     client.stop(); 
     Serial.println("stopped..."); 
+    
 }
 
 void printMyInfo() { 
@@ -227,17 +241,6 @@ float read_Ph()
   
   return ph;
 }
-
-void PhDisableContinious()
-{
-  myserial.print("c,0\r");       // disable continious.
-  delay(50);
-  myserial.print("c,0\r");       // on startup somtimes, first command is missed.
-  delay(50);
-  myserial.print("RESPONSE,0\r");// disable response.
- 
-}
-
 
 
 float read_DO(){

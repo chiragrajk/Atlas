@@ -164,50 +164,6 @@ void loop(){
     Serial.println("stopped..."); 
 }
 
-//void loop() {
-//  // put your main code here, to run repeatedly:
-////  Serial.println(">>");
-//  
-//  
-//  // Print Update Response from WiFi shield to Serial monitor
-//  while(client.available())
-//  {
-//    char c = client.read();
-//    Serial.print(c);
-//  }
-//  
-//  if(!client.connected() && lastConnected)
-//  {
-//    Serial.println("... disconnected\n");
-//    show("...disconnected");
-//    client.stop();
-//  }
-//  
-//    // Update ThingSpeak
-//  if(!client.connected() && (millis() - lastConnectionTime > updateThingSpeakInterval))
-//  {
-////    float coreTemp = read_CoreTemp();
-////    float phScale = read_Ph();
-////    float doScale = 00.01;//read_DO();
-////    float waterTemp= read_WaterTemp();
-//
-////    update(coreTemp, phScale, doScale, waterTemp);
-//    update(read_CoreTemp(), read_Ph(), read_DO(), read_WaterTemp() );
-//  }
-//  
-//    if (failedCounter > 3 ) {
-//      // restart connection
-//      connectWifi();
-//      failedCounter = 0;
-//    }
-//  
-//  delay(1000);
-//  lastConnected = client.connected();
-//
-//}
-
-
-
 void printMyInfo() { 
             // print your WiFi shield's IP address: 
             IPAddress ip = WiFi.localIP(); 
@@ -226,7 +182,6 @@ float read_WaterTemp(void)
 {   //the read temperature function
   float v_out;             //voltage output from temp sensor 
   float temp;              //the final temperature is stored here
-  //String temperature;
  
   digitalWrite(TEMP_PROBE_READ_PIN, LOW);   //set pull-up on analog pin
   delay(2);                //wait 2 ms for temp to stabilize
@@ -234,9 +189,6 @@ float read_WaterTemp(void)
   v_out*= 0.0033;            //convert ADC points to volts (we are using .0048 because this device is running at 5 volts)
   v_out*=1000;             //convert volts to millivolts
   temp= 0.0512 * v_out -20.5128; //the equation from millivolts to temperature
-
-//  Serial.print("Voltage read =");
-//  Serial.println(v_out);
 
   return temp;             //send back the temp
 }
@@ -366,7 +318,7 @@ void updateThingSpeak(String tsData)
     {
       failedCounter++;
   
-      Serial.print("Connection to ThingSpeak failed: ");   
+      Serial.print("Connection to ThingSpeak failed: " );   
       Serial.println(failedCounter);
       Serial.println();
       show("TS failed");
@@ -377,7 +329,7 @@ void updateThingSpeak(String tsData)
   {
     failedCounter++;
     
-    Serial.print("Connection to ThingSpeak failed: ");   
+    Serial.print("Connection to ThingSpeak failed: " );   
     Serial.println(failedCounter);
     Serial.println();
     show("TS failed");
@@ -396,7 +348,6 @@ void show(char* text) {
     lcd.print(line1);
     lcd.setCursor(0, 1);    // set cursor to new line.
     lcd.print(line2);
-    
 }
 
 
@@ -421,14 +372,6 @@ char *toChar(float f, char *tmp)
 //  Serial.println(tmp);
   return tmp;
 }
-
-//char *toChar(float f, char *tmp)
-//{
-//  String s = String(f);
-//  s.toCharArray(tmp, 6);
-//  return tmp;
-//}
-
 
 char *toChar(int i, char *tmp)
 {

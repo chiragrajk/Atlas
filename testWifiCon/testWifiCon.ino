@@ -10,8 +10,8 @@
 
 // WiFi settings
 #define WiFiWait 15        // seconds to wait for Wifi Connection
-char ssid[] = "WSN";
-char pass[] = "sensor2014";
+char ssid[] = "AIT";
+char pass[] = "";
 int status = WL_IDLE_STATUS;
 WiFiClient client;
 long lastConnectionTime = 0;
@@ -55,7 +55,7 @@ void connectWifi()
     Serial.print("Attempting to connect to WPA SSID: "); 
     Serial.println(ssid); 
     // Connect to WPA/WPA2 network:    
-    status = WiFi.begin(ssid, pass); 
+    status = WiFi.begin(ssid);//, pass); 
     // wait 10 seconds for connection: 
     delay(WiFiWait * 1000); 
   } 

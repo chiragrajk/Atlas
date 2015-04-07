@@ -49,7 +49,7 @@ const int updateThingSpeakInterval = 16 * 1000;      // Time interval in millise
 
 DS3231 RTC; //Create the DS3231 object
 
-#define sensorReadingInterval         600000    //define delay between readings in milliseconds 
+#define sensorReadingInterval      10000   //9000000    //define delay between readings in milliseconds 
 #define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break 
 #define numReconnect          5       //define number of trying to reconnect WiFi if lost
 int reconnectCount = 0;
@@ -121,7 +121,7 @@ void loop(){
   // taking readings
     float coreTemp = read_CoreTemp();
     float phScale = read_Ph();
-    float doScale = 00.01;//read_DO();
+    float doScale = read_DO();
     float waterTemp= read_WaterTemp();
 
  
@@ -283,6 +283,7 @@ void update(float coreTemp, float phScale, float doScale, float waterTemp)
   Serial.println(lcdChar);
   sprintf(lcdChar, "DO:%s wT:%s", toChar(doScale, buf1), toChar(waterTemp, buf2));
   show(lcdChar);
+  delay(2000);
   Serial.println(lcdChar);
   
 //  sprintf(updateBuf, "1=%s&2=%s&3=%s&4=%s", toChar(coreTemp, buf), toChar(phScale, buf), toChar(doScale, buf), toChar(waterTemp, buf) );

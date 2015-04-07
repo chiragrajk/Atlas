@@ -30,7 +30,7 @@ rgb_lcd lcd;
 
 // WiFi settings
 #define WiFiWait 15        // seconds to wait for Wifi Connection
-char ssid[] = "AIT";
+char ssid[] = "WSN";
 char pass[] = "sensor2014";
 int status = WL_IDLE_STATUS;
 WiFiClient client;
@@ -45,11 +45,11 @@ boolean lastConnected = 0;
 //String writeAPIKey = "V14RQV60VTFKBQJW";
 char thingSpeakAddress[] = "203.159.0.30";
 String writeAPIKey = "3QAM4AQLN4R6I5J8";
-const int updateThingSpeakInterval = 16 * 1000;      // Time interval in milliseconds to update ThingSpeak (number of seconds * 1000 = interval)
+//const int updateThingSpeakInterval = 16 * 1000;      // Time interval in milliseconds to update ThingSpeak (number of seconds * 1000 = interval)
 
 DS3231 RTC; //Create the DS3231 object
 
-#define sensorReadingInterval      10000   //9000000    //define delay between readings in milliseconds 
+#define sensorReadingInterval      10000   //900000    //define delay between readings in milliseconds 
 #define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break 
 #define numReconnect          5       //define number of trying to reconnect WiFi if lost
 int reconnectCount = 0;
@@ -59,13 +59,13 @@ int goAgain = 10;
 void setup() {
   
   Serial.begin(38400);        // begin serial monitor
-  Serial.println("Welcome to WSN 2015");
+  Serial.println(F ("Welcome to WSN 2015"));
   
   myserial.begin(9600);       // begin software serial to PH probe
 //  PhDisableContinious();      // disable continious mode in PH probe
   
   lcd.begin(16, 2);           // setup lcd display
-  lcd.setRGB(255, 0, 0);
+  lcd.setRGB(0, 255, 0);
   lcd.blink();                // setup blining cursor
   
   show("Welcome!!!");
@@ -81,13 +81,13 @@ void setup() {
 void connectWifi()
 {
   client.stop();
-  Serial.println("Starting connection...");
+  Serial.println(F ("Starting connection..."));
   show("Connecting WiFi");
   
   // check shield
   if (WiFi.status() == WL_NO_SHIELD) 
   { 
-    Serial.println("WiFi shield not present");
+    Serial.println(F ("WiFi shield not present"));
         // don't continue:
     while(WiFi.status() == WL_NO_SHIELD){
       delay(5000);
@@ -98,25 +98,25 @@ void connectWifi()
   // connect to WiFi network.
   while ( status != WL_CONNECTED )
   { 
-    Serial.print("Attempting to connect to WPA SSID: "); 
+    Serial.print(F ("Attempting to connect to WPA SSID: ")); 
     Serial.println(ssid); 
     
     show("Connecting to");
     show(ssid);
     // Connect to WPA/WPA2 network:    
-    status = WiFi.begin(ssid);//, pass); 
+    status = WiFi.begin(ssid, pass); 
     // wait 10 seconds for connection: 
     delay(WiFiWait * 1000); 
   } 
   
-  Serial.print("You are now connected to ");
+  Serial.print(F ("You are now connected to "));
   Serial.println(ssid);
   
   printMyInfo();
 }
 
 void loop(){
-  Serial.println(" --- Starting main loop ---");
+  Serial.println(F (" --- Starting main loop ---"));
   
   // taking readings
     float coreTemp = read_CoreTemp();
@@ -127,10 +127,10 @@ void loop(){
  
   //check and reconnect WiFi if necessary 
   while ( WiFi.status() != WL_CONNECTED && reconnectCount < numReconnect) { 
-    Serial.print("Attempting to re­connect to WPA SSID: "); 
+    Serial.print(F ("Attempting to re­connect to WPA SSID: ")); 
     Serial.println(ssid); 
     // Connect to WPA/WPA2 network:    
-    status = WiFi.begin(ssid);//, pass); 
+    status = WiFi.begin(ssid, pass); 
     reconnectCount += 1; 
     // wait 15 seconds for connection: 
     delay(WiFiWait * 1000); 
@@ -138,12 +138,12 @@ void loop(){
 
   reconnectCount = 0; 
   //sending to ThingSpeak 
-  Serial.println("Sending to ThingSpeak."); 
+  Serial.println(F ("Sending to ThingSpeak.")); 
 //  updateThingSpeak(updateString);         // update to thingspeak
  update(coreTemp, phScale, doScale, waterTemp);
  
   while (!client.available()  && numWait < numSecWait) { 
-    Serial.println("waiting..."); 
+    Serial.println(F ("waiting...")); 
     numWait += 1; 
     delay(1500); 
   } 
@@ -174,7 +174,7 @@ void loop(){
     client.flush(); 
     Serial.println("flushed..."); 
     client.stop(); 
-    Serial.println("stopped..."); 
+    Serial.println("stopped...\n"); 
     
 }
 
@@ -241,8 +241,6 @@ float read_Ph()
   
   return ph;
 }
-
-
 float read_DO(){
   
   int i = 0;
@@ -251,9 +249,14 @@ float read_DO(){
   float sat_avg = 0;
  
   analogReference(INTERNAL);
-  Serial.println("in readDO(): Switching voltage to INTERNAL 1.1v");
 
   delay(1000);
+
+  do{
+    analogRead(DO_PROBE_READ_PIN);
+    i++;
+  } while( i<5);
+  i=0;
   
   do{
     delay(DO_READ_DELAY);  // wait for sensors to stabalize
@@ -267,7 +270,7 @@ float read_DO(){
   sat_avg = avg / 28.5*100;
   
   analogReference(DEFAULT);  // DEFAULT = 3.3v
-  Serial.println("in readDO(): Switching voltage to DEFAULT 3.3v ");
+  Serial.println(F ("in readDO(): Switching voltage to DEFAULT 3.3v "));
   return sat_avg;
   
 }
@@ -283,9 +286,9 @@ void update(float coreTemp, float phScale, float doScale, float waterTemp)
   Serial.println(lcdChar);
   sprintf(lcdChar, "DO:%s wT:%s", toChar(doScale, buf1), toChar(waterTemp, buf2));
   show(lcdChar);
-  delay(2000);
   Serial.println(lcdChar);
-  
+  delay(2000);
+    
 //  sprintf(updateBuf, "1=%s&2=%s&3=%s&4=%s", toChar(coreTemp, buf), toChar(phScale, buf), toChar(doScale, buf), toChar(waterTemp, buf) );
   sprintf(updateBuf, "1=%s&2=%s", toChar(coreTemp, buf1), toChar(phScale, buf2));
   sprintf(updateBuf, "%s&3=%s&4=%s", updateBuf, toChar(doScale, buf1), toChar(waterTemp, buf2) );
@@ -301,7 +304,8 @@ void updateThingSpeak(String tsData)
     client.println("POST /update HTTP/1.1");
     client.println("Host: 203.159.0.30:3000");
     client.println("Connection: close");
-    client.println("X-THINGSPEAKAPIKEY: "+writeAPIKey);
+    client.print("X-THINGSPEAKAPIKEY: ");
+    client.println(writeAPIKey);
     client.println("Content-Type: application/x-www-form-urlencoded");
     client.print("Content-Length: ");
     client.println(tsData.length());

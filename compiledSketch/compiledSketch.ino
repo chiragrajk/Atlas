@@ -49,7 +49,7 @@ String writeAPIKey = "3QAM4AQLN4R6I5J8";
 
 DS3231 RTC; //Create the DS3231 object
 
-#define sensorReadingInterval      10000   //900000    //define delay between readings in milliseconds 
+#define sensorReadingInterval      900000    //define delay between readings in milliseconds 
 #define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break 
 #define numReconnect          5       //define number of trying to reconnect WiFi if lost
 int reconnectCount = 0;
@@ -287,7 +287,7 @@ void update(float coreTemp, float phScale, float doScale, float waterTemp)
   sprintf(lcdChar, "DO:%s wT:%s", toChar(doScale, buf1), toChar(waterTemp, buf2));
   show(lcdChar);
   Serial.println(lcdChar);
-  delay(2000);
+  delay(3000);
     
 //  sprintf(updateBuf, "1=%s&2=%s&3=%s&4=%s", toChar(coreTemp, buf), toChar(phScale, buf), toChar(doScale, buf), toChar(waterTemp, buf) );
   sprintf(updateBuf, "1=%s&2=%s", toChar(coreTemp, buf1), toChar(phScale, buf2));

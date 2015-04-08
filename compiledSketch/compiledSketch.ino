@@ -80,7 +80,6 @@ void setup() {
 
 void connectWifi()
 {
-  client.stop();
   Serial.println(F ("Starting connection..."));
   show("Connecting WiFi");
   
@@ -229,15 +228,17 @@ float read_Ph()
         BLUE (cyan)     =  taking a reading
   */
 
-  myserial.print("r\r");      // Request for data
-  delay(1000);                // waiting for response
-  
-  if(myserial.available() > 0)
-  {
-    received_from_sensor = myserial.readBytesUntil(13, ph_data, 20);
-    ph_data[received_from_sensor] = 0;
-  }
-  ph = atof(ph_data);
+  do{
+    myserial.print("r\r");      // Request for data
+    delay(1000);                // waiting for response
+    
+    if(myserial.available() > 0)
+    {
+      received_from_sensor = myserial.readBytesUntil(13, ph_data, 20);
+      ph_data[received_from_sensor] = 0;
+    }
+    ph = atof(ph_data);
+  }while(ph > 0.0 && ph < 14.0);
   
   return ph;
 }

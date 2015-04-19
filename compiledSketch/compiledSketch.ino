@@ -238,7 +238,7 @@ float read_Ph()
       ph_data[received_from_sensor] = 0;
     }
     ph = atof(ph_data);
-  }while(ph > 0.0 && ph < 14.0);
+  }while(ph < 0.5 || ph > 14.0);
   
   return ph;
 }

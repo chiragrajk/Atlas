@@ -1,5 +1,5 @@
 // Date and time functions using DS3231 RTC connected via I2C and Wire lib
-// DS3231 can be downloaded from 
+// DS3231 can be downloaded from
 // https://github.com/jcastaneyra/ds3231_library
 
 #include <Wire.h>
@@ -14,11 +14,11 @@
 #define tx 3
 SoftwareSerial myserial(rx, tx);
 
-// for DO Pin setting 
-#define TEMP_PROBE_READ_PIN 0 
-#define DO_PROBE_READ_PIN   1 
-// for DO Probe setting 
-#define DO_READ_DELAY       100 //in ms 
+// for DO Pin setting
+#define TEMP_PROBE_READ_PIN 0
+#define DO_PROBE_READ_PIN   1
+// for DO Probe setting
+#define DO_READ_DELAY       100 //in ms
 #define DO_READ_NUM         89  //number DO read before avg
 
 // for Water Temp Probe
@@ -49,30 +49,32 @@ String writeAPIKey = "3QAM4AQLN4R6I5J8";
 
 DS3231 RTC; //Create the DS3231 object
 
-#define sensorReadingInterval      900000    //define delay between readings in milliseconds 
-#define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break 
+#define sensorReadingInterval      900000    //define delay between readings in milliseconds
+#define numSecWait            10      //define number of seconds waiting for reply from ThingSpeak before break
 #define numReconnect          5       //define number of trying to reconnect WiFi if lost
 int reconnectCount = 0;
 int numWait = 0;
 int goAgain = 10;
 
 void setup() {
-  
+
   Serial.begin(38400);        // begin serial monitor
   Serial.println(F ("Welcome to WSN 2015"));
-  
+
   myserial.begin(9600);       // begin software serial to PH probe
+
+  // removed to save memory
 //  PhDisableContinious();      // disable continious mode in PH probe
-  
+
   lcd.begin(16, 2);           // setup lcd display
   lcd.setRGB(0, 255, 0);
   lcd.blink();                // setup blining cursor
-  
-  show("Welcome!!!");
-  
+
+  show("Welcome!!!");         // welcome msg for LCD
+
   // WiFi setup
   connectWifi();
-  
+
   // core temp setup
   Wire.begin();
   RTC.begin();
@@ -82,120 +84,125 @@ void connectWifi()
 {
   Serial.println(F ("Starting connection..."));
   show("Connecting WiFi");
-  
+
   // check shield
-  if (WiFi.status() == WL_NO_SHIELD) 
-  { 
+  if (WiFi.status() == WL_NO_SHIELD)
+  {
     Serial.println(F ("WiFi shield not present"));
         // don't continue:
     while(WiFi.status() == WL_NO_SHIELD){
       delay(5000);
     }
   }
-  
-  
+
+
   // connect to WiFi network.
   while ( status != WL_CONNECTED )
-  { 
-    Serial.print(F ("Attempting to connect to WPA SSID: ")); 
-    Serial.println(ssid); 
-    
+  {
+    Serial.print(F ("Attempting to connect to WPA SSID: "));
+    Serial.println(ssid);
+
     show("Connecting to");
     show(ssid);
-    // Connect to WPA/WPA2 network:    
-    status = WiFi.begin(ssid, pass); 
-    // wait 10 seconds for connection: 
-    delay(WiFiWait * 1000); 
-  } 
-  
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
+    // wait 10 seconds for connection:
+    delay(WiFiWait * 1000);
+  }
+
   Serial.print(F ("You are now connected to "));
   Serial.println(ssid);
-  
+
   printMyInfo();
 }
 
 void loop(){
   Serial.println(F (" --- Starting main loop ---"));
-  
+
   // taking readings
     float coreTemp = read_CoreTemp();
     float phScale = read_Ph();
     float doScale = read_DO();
     float waterTemp= read_WaterTemp();
 
- 
-  //check and reconnect WiFi if necessary 
-  while ( WiFi.status() != WL_CONNECTED && reconnectCount < numReconnect) { 
-    Serial.print(F ("Attempting to re­connect to WPA SSID: ")); 
-    Serial.println(ssid); 
-    // Connect to WPA/WPA2 network:    
-    status = WiFi.begin(ssid, pass); 
-    reconnectCount += 1; 
-    // wait 15 seconds for connection: 
-    delay(WiFiWait * 1000); 
-  } 
 
-  reconnectCount = 0; 
-  //sending to ThingSpeak 
-  Serial.println(F ("Sending to ThingSpeak.")); 
-//  updateThingSpeak(updateString);         // update to thingspeak
- update(coreTemp, phScale, doScale, waterTemp);
- 
-  while (!client.available()  && numWait < numSecWait) { 
-    Serial.println(F ("waiting...")); 
-    numWait += 1; 
-    delay(1500); 
-  } 
+  //check and reconnect WiFi if necessary
+  while ( WiFi.status() != WL_CONNECTED && reconnectCount < numReconnect) {
+    Serial.print(F ("Attempting to re­connect to WPA SSID: "));
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network
+    status = WiFi.begin(ssid, pass);
+    reconnectCount += 1;
+    // wait 15 seconds for WiFi connection
+    delay(WiFiWait * 1000);
+  }
+
+  reconnectCount = 0;
+  //sending to ThingSpeak
+  Serial.println(F ("Sending to ThingSpeak."));
+
+ update(coreTemp, phScale, doScale, waterTemp);   // update ThingSpeak
+
+  while (!client.available()  && numWait < numSecWait) {
+    Serial.println(F ("waiting..."));
+    numWait += 1;
+    delay(1500);
+  }
+
   if(numWait >= numSecWait)
     goAgain = 1;
   else
     goAgain = 0;
-    
-  numWait = 0; 
-  
-  while (client.available()) 
-    { 
-      char c = client.read(); 
-      Serial.print(c); 
-    } 
 
-    Serial.println("...disconnected"); 
-    Serial.println(); 
-    
+  numWait = 0;
+
+  while (client.available())
+    {
+      char c = client.read();
+      Serial.print(c);
+    }
+
+    Serial.println("...disconnected");
+    Serial.println();
+
     if(goAgain <= 0){
       Serial.println("going to sleep...*");
       show("sleeping...*");
-      delay(sensorReadingInterval); 
+      delay(sensorReadingInterval);           // sleep for given interval
     }
     else
+    {
+      // try to update thingSpeak again
+      // if update fails
       goAgain--;
+    }
 
-    client.flush(); 
-    Serial.println("flushed..."); 
-    client.stop(); 
-    Serial.println("stopped...\n"); 
-    
+    client.flush();
+    Serial.println("flushed...");
+    client.stop();
+    Serial.println("stopped...\n");
+
 }
 
-void printMyInfo() { 
-            // print your WiFi shield's IP address: 
-            IPAddress ip = WiFi.localIP(); 
-            Serial.print("My IP Address: "); 
-            Serial.println(ip); 
-            
-            // for LCD
-            char myIp[24];
-            sprintf(myIp, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-            show("my IP:");
-            show(myIp);
+void printMyInfo() {
+  // print your WiFi shield's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("My IP Address: ");
+  Serial.println(ip);
 
-} 
+  // for LCD
+  char myIp[24];
+  sprintf(myIp, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+  show("my IP:");
+  show(myIp);
+
+}
 
 float read_WaterTemp(void)
-{   //the read temperature function
-  float v_out;             //voltage output from temp sensor 
+{
+  float v_out;             //voltage output from temp sensor
   float temp;              //the final temperature is stored here
- 
+
   digitalWrite(TEMP_PROBE_READ_PIN, LOW);   //set pull-up on analog pin
   delay(2);                //wait 2 ms for temp to stabilize
   v_out = analogRead(TEMP_PROBE_READ_PIN);   //read the input pin
@@ -207,10 +214,10 @@ float read_WaterTemp(void)
 }
 
 
-float read_CoreTemp()    
+float read_CoreTemp()
 {
   float tmp;
-  
+
   RTC.convertTemperature();
   tmp = RTC.getTemperature();
   return tmp;
@@ -231,57 +238,64 @@ float read_Ph()
   do{
     myserial.print("r\r");      // Request for data
     delay(1000);                // waiting for response
-    
+
     if(myserial.available() > 0)
     {
       received_from_sensor = myserial.readBytesUntil(13, ph_data, 20);
       ph_data[received_from_sensor] = 0;
     }
     ph = atof(ph_data);
-  }while(ph < 0.5 || ph > 14.0);
-  
+  }while(ph < 0.5 || ph > 14.0);  // Validation to limit out of range value
+
   return ph;
 }
+
+
 float read_DO(){
-  
+
   int i = 0;
   float sum = 0;
   float avg = 0;
   float sat_avg = 0;
- 
+
   analogReference(INTERNAL);
 
   delay(1000);
 
+  // first few readings are not accurate
+  // due to change in reference voltage
   do{
     analogRead(DO_PROBE_READ_PIN);
     i++;
   } while( i<5);
   i=0;
-  
+
   do{
-    delay(DO_READ_DELAY);  // wait for sensors to stabalize
+    delay(DO_READ_DELAY);  // wait for sensors to stabilize
     int val = analogRead(DO_PROBE_READ_PIN);
     float voltage = val * (1100.0/1023.0);
     sum += voltage;
     i++;
-  } while (i<DO_READ_NUM);
-  
+  } while (i<DO_READ_NUM);  // taking an average
+
   avg = sum / DO_READ_NUM;
   sat_avg = avg / 28.5*100;
-  
+
   analogReference(DEFAULT);  // DEFAULT = 3.3v
   Serial.println(F ("in readDO(): Switching voltage to DEFAULT 3.3v "));
   return sat_avg;
-  
+
 }
 
+
+// function to prepare update string for ThingSpeak
+// and call updateThingSpeak()
 void update(float coreTemp, float phScale, float doScale, float waterTemp)
 {
-  char updateBuf[32];
-  char lcdChar[20];
-  char buf1[6], buf2[6];
-  
+  char updateBuf[32];     // buffer array for ThingSpeak
+  char lcdChar[20];       // buffer array for LCD
+  char buf1[6], buf2[6];  // temporary variables
+
   sprintf(lcdChar, "cT:%s pH:%s", toChar(coreTemp, buf1), toChar(phScale, buf2));
   show(lcdChar);
   Serial.println(lcdChar);
@@ -289,8 +303,7 @@ void update(float coreTemp, float phScale, float doScale, float waterTemp)
   show(lcdChar);
   Serial.println(lcdChar);
   delay(3000);
-    
-//  sprintf(updateBuf, "1=%s&2=%s&3=%s&4=%s", toChar(coreTemp, buf), toChar(phScale, buf), toChar(doScale, buf), toChar(waterTemp, buf) );
+
   sprintf(updateBuf, "1=%s&2=%s", toChar(coreTemp, buf1), toChar(phScale, buf2));
   sprintf(updateBuf, "%s&3=%s&4=%s", updateBuf, toChar(doScale, buf1), toChar(waterTemp, buf2) );
   Serial.println(updateBuf);
@@ -301,7 +314,7 @@ void update(float coreTemp, float phScale, float doScale, float waterTemp)
 void updateThingSpeak(String tsData)
 {
   if (client.connect(thingSpeakAddress, 3000))
-  {         
+  {
     client.println("POST /update HTTP/1.1");
     client.println("Host: 203.159.0.30:3000");
     client.println("Connection: close");
@@ -313,9 +326,9 @@ void updateThingSpeak(String tsData)
     client.println();
 
     client.print(tsData);
-    
+
     lastConnectionTime = millis();
-    
+
     if (client.connected())
     {
       Serial.println("Connecting to ThingSpeak...");
@@ -326,41 +339,42 @@ void updateThingSpeak(String tsData)
     else
     {
       failedCounter++;
-  
-      Serial.print("Connection to ThingSpeak failed: " );   
+
+      Serial.print("Connection to ThingSpeak failed: " );
       Serial.println(failedCounter);
       Serial.println();
       show("TS failed");
     }
-    
+
   }
   else
   {
     failedCounter++;
-    
-    Serial.print("Connection to ThingSpeak failed: " );   
+
+    Serial.print("Connection to ThingSpeak failed: " );
     Serial.println(failedCounter);
     Serial.println();
     show("TS failed");
-    lastConnectionTime = millis(); 
+    lastConnectionTime = millis();
   }
 }
 
-// scroll display.
+// function to show text on LCD,
+// and vertical text scroll.
 char line1[20];
 char line2[20];
 // only 16 characters at a time.
-void show(char* text) {    
+void show(char* text) {
     lcd.clear();
     strcpy(line1, line2);
     strcpy(line2, text);
-    lcd.print(line1);
+    lcd.print(line1);       // print first line
     lcd.setCursor(0, 1);    // set cursor to new line.
-    lcd.print(line2);
+    lcd.print(line2);       // print second line
 }
 
 
-char *toChar(float f, char *tmp)
+char *toChar(float f, char *tmp)    // function to convert float to char array
 {
   int i = trunc(f*100);
   int j = 0;
@@ -377,7 +391,7 @@ char *toChar(float f, char *tmp)
     sprintf(tmp, "%d.0%d", j, i);
   else
     sprintf(tmp, "%d.%d", j, i);
-    
+
 //  Serial.println(tmp);
   return tmp;
 }

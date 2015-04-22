@@ -6,3 +6,4 @@ Content
   - Examples for ThingSpeak
   - Final compiled sketch for WSN 2015 AIT
   
+Preview of previous implementation: http://203.159.0.30:3000/channels/47
